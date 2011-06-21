@@ -1708,13 +1708,16 @@ Value::end()
 // //////////////////////////////////////////////////////////////////
 
 PathArgument::PathArgument()
-   : kind_( kindNone )
+   : key_()
+   , index_()
+   , kind_( kindNone )
 {
 }
 
 
 PathArgument::PathArgument( ArrayIndex index )
-   : index_( index )
+   : key_()
+   , index_( index )
    , kind_( kindIndex )
 {
 }
@@ -1722,6 +1725,7 @@ PathArgument::PathArgument( ArrayIndex index )
 
 PathArgument::PathArgument( const char *key )
    : key_( key )
+   , index_()
    , kind_( kindKey )
 {
 }
@@ -1729,6 +1733,7 @@ PathArgument::PathArgument( const char *key )
 
 PathArgument::PathArgument( const std::string &key )
    : key_( key.c_str() )
+   , index_()
    , kind_( kindKey )
 {
 }

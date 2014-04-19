@@ -12,7 +12,6 @@
 # endif // #ifndef JSON_USE_SIMPLE_INTERNAL_ALLOCATOR
 #endif // if !defined(JSON_IS_AMALGAMATION)
 #include <math.h>
-#include <iostream>
 #include <sstream>
 #include <utility>
 #include <stdexcept>
@@ -471,7 +470,10 @@ Value::Value( const Value &other )
          allocated_ = true;
       }
       else
+      {
          value_.string_ = 0;
+         allocated_ = false;
+      }
       break;
 #ifndef JSON_VALUE_USE_INTERNAL_MAP
    case arrayValue:
@@ -1803,7 +1805,7 @@ Path::makePath( const std::string &path,
 
 
 void 
-Path::addPathInArg( const std::string &path, 
+Path::addPathInArg( const std::string &/*path*/, 
                     const InArgs &in, 
                     InArgs::const_iterator &itInArg, 
                     PathArgument::Kind kind )
@@ -1824,8 +1826,8 @@ Path::addPathInArg( const std::string &path,
 
 
 void 
-Path::invalidPath( const std::string &path, 
-                   int location )
+Path::invalidPath( const std::string &/*path*/, 
+                   int /*location*/ )
 {
    // Error: invalid path.
 }

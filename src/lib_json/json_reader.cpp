@@ -13,10 +13,10 @@
 #include <cstdio>
 #include <cassert>
 #include <cstring>
-#include <iostream>
+#include <istream>
 #include <stdexcept>
 
-#if _MSC_VER >= 1400 // VC++ 8.0
+#if defined(_MSC_VER)  &&  _MSC_VER >= 1400 // VC++ 8.0
 #pragma warning( disable : 4996 )   // disable warning about strdup being deprecated.
 #endif
 
@@ -869,7 +869,11 @@ Reader::getLocationLineAndColumn( Location location ) const
    int line, column;
    getLocationLineAndColumn( location, line, column );
    char buffer[18+16+16+1];
-   sprintf( buffer, "Line %d, Column %d", line, column );
+#if defined(_MSC_VER) && defined(__STDC_SECURE_LIB__)
+   sprintf_s(buffer, sizeof(buffer), "Line %d, Column %d", line, column);
+#else
+   snprintf(buffer, sizeof(buffer), "Line %d, Column %d", line, column);
+#endif
    return buffer;
 }
 
@@ -904,7 +908,14 @@ std::istream& operator>>( std::istream &sin, Value &root )
 {
     Json::Reader reader;
     bool ok = reader.parse(sin, root, true);
-    if (!ok) JSON_FAIL_MESSAGE(reader.getFormattedErrorMessages());
+    if (!ok) {
+      fprintf(
+          stderr,
+          "Error from reader: %s",
+          reader.getFormattedErrorMessages().c_str());
+
+      JSON_FAIL_MESSAGE("reader error");
+    }
     return sin;
 }
 

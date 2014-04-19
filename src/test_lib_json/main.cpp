@@ -63,8 +63,8 @@ struct ValueTest : JsonTest::TestCase
       : emptyArray_( Json::arrayValue )
       , emptyObject_( Json::objectValue )
       , integer_( 123456789 )
-      , smallUnsignedInteger_( Json::Value::UInt( Json::Value::maxInt ) )
       , unsignedInteger_( 34567890u )
+      , smallUnsignedInteger_( Json::Value::UInt( Json::Value::maxInt ) )
       , real_( 1234.56789 )
       , float_( 0.00390625f )
       , emptyString_( "" )
@@ -462,7 +462,7 @@ JSONTEST_FIXTURE( ValueTest, integers )
    JSONTEST_ASSERT_EQUAL(0.0, val.asDouble());
    JSONTEST_ASSERT_EQUAL(0.0, val.asFloat());
    JSONTEST_ASSERT_EQUAL(false, val.asBool());
-   JSONTEST_ASSERT_STRING_EQUAL("0.0", val.asString());
+   JSONTEST_ASSERT_STRING_EQUAL("0", val.asString());
 
    // Zero (signed constructor arg)
    val = Json::Value(0);
@@ -546,7 +546,7 @@ JSONTEST_FIXTURE( ValueTest, integers )
    JSONTEST_ASSERT_EQUAL(0.0, val.asDouble());
    JSONTEST_ASSERT_EQUAL(0.0, val.asFloat());
    JSONTEST_ASSERT_EQUAL(false, val.asBool());
-   JSONTEST_ASSERT_STRING_EQUAL("0.0", val.asString());
+   JSONTEST_ASSERT_STRING_EQUAL("0", val.asString());
 
    // 2^20 (signed constructor arg)
    val = Json::Value(1 << 20);
@@ -629,7 +629,7 @@ JSONTEST_FIXTURE( ValueTest, integers )
    JSONTEST_ASSERT_EQUAL((1 << 20), val.asDouble());
    JSONTEST_ASSERT_EQUAL((1 << 20), val.asFloat());
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_STRING_EQUAL("1048576.0", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_STRING_EQUAL("1048576", normalizeFloatingPointStr(val.asString()));
 
    // -2^20
    val = Json::Value(-(1 << 20));
@@ -869,7 +869,7 @@ JSONTEST_FIXTURE( ValueTest, integers )
    JSONTEST_ASSERT_EQUAL((Json::Int64(1) << 40), val.asDouble());
    JSONTEST_ASSERT_EQUAL((Json::Int64(1) << 40), val.asFloat());
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_STRING_EQUAL("1099511627776.0", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_STRING_EQUAL("1099511627776", normalizeFloatingPointStr(val.asString()));
 
    // -2^40
    val = Json::Value(-(Json::Int64(1) << 40));
@@ -991,6 +991,52 @@ JSONTEST_FIXTURE( ValueTest, integers )
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
    JSONTEST_ASSERT_STRING_EQUAL("-9.223372036854776e+18", normalizeFloatingPointStr(val.asString()));
 
+   // 10^19
+   const Json::UInt64 ten_to_19 = static_cast<Json::UInt64>( 1e19 );
+   val = Json::Value(Json::UInt64(ten_to_19));
+
+   JSONTEST_ASSERT_EQUAL(Json::uintValue, val.type());
+
+   checks = IsCheck();
+   checks.isUInt64_ = true;
+   checks.isIntegral_ = true;
+   checks.isDouble_ = true;
+   checks.isNumeric_ = true;
+   JSONTEST_ASSERT_PRED( checkIs( val, checks ) );
+
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::nullValue));
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::intValue));
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::uintValue));
+
+   JSONTEST_ASSERT_EQUAL(ten_to_19, val.asUInt64());
+   JSONTEST_ASSERT_EQUAL(ten_to_19, val.asLargestUInt());
+   JSONTEST_ASSERT_EQUAL(uint64ToDouble(ten_to_19), val.asDouble());
+   JSONTEST_ASSERT_EQUAL(float(uint64ToDouble(ten_to_19)), val.asFloat());
+   JSONTEST_ASSERT_EQUAL(true, val.asBool());
+   JSONTEST_ASSERT_STRING_EQUAL("10000000000000000000", val.asString());
+
+   // 10^19 (double constructor). Note that 10^19 is not exactly representable
+   // as a double.
+   val = Json::Value(uint64ToDouble(ten_to_19));
+
+   JSONTEST_ASSERT_EQUAL(Json::realValue, val.type());
+
+   checks = IsCheck();
+   checks.isUInt64_ = true;
+   checks.isIntegral_ = true;
+   checks.isDouble_ = true;
+   checks.isNumeric_ = true;
+   JSONTEST_ASSERT_PRED( checkIs( val, checks ) );
+
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::nullValue));
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::intValue));
+   JSONTEST_ASSERT(!val.isConvertibleTo(Json::uintValue));
+
+   JSONTEST_ASSERT_EQUAL(1e19, val.asDouble());
+   JSONTEST_ASSERT_EQUAL(1e19, val.asFloat());
+   JSONTEST_ASSERT_EQUAL(true, val.asBool());
+   JSONTEST_ASSERT_STRING_EQUAL("1e+19", normalizeFloatingPointStr(val.asString()));
+
    // uint64 max
    val = Json::Value(Json::UInt64(kuint64max));
 
@@ -1068,7 +1114,7 @@ JSONTEST_FIXTURE( ValueTest, nonIntegers )
    JSONTEST_ASSERT_EQUAL(1, val.asUInt());
    JSONTEST_ASSERT_EQUAL(1, val.asLargestUInt());
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_EQUAL("1.50", val.asString());
+   JSONTEST_ASSERT_EQUAL("1.5", val.asString());
 
    // Small negative number
    val = Json::Value(-1.5);
@@ -1094,7 +1140,7 @@ JSONTEST_FIXTURE( ValueTest, nonIntegers )
    JSONTEST_ASSERT_EQUAL(-1, val.asInt());
    JSONTEST_ASSERT_EQUAL(-1, val.asLargestInt());
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_EQUAL("-1.50", val.asString());
+   JSONTEST_ASSERT_EQUAL("-1.5", val.asString());
 
    // A bit over int32 max
    val = Json::Value(kint32max + 0.5);
@@ -1123,7 +1169,7 @@ JSONTEST_FIXTURE( ValueTest, nonIntegers )
    JSONTEST_ASSERT_EQUAL(2147483647U, val.asLargestUInt());
 #endif
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_EQUAL("2147483647.50", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_EQUAL("2147483647.5", normalizeFloatingPointStr(val.asString()));
 
    // A bit under int32 min
    val = Json::Value(kint32min - 0.5);
@@ -1150,7 +1196,7 @@ JSONTEST_FIXTURE( ValueTest, nonIntegers )
    JSONTEST_ASSERT_EQUAL(-Json::Int64(1)<< 31, val.asLargestInt());
 #endif
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_EQUAL("-2147483648.50", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_EQUAL("-2147483648.5", normalizeFloatingPointStr(val.asString()));
 
    // A bit over uint32 max
    val = Json::Value(kuint32max + 0.5);
@@ -1178,10 +1224,25 @@ JSONTEST_FIXTURE( ValueTest, nonIntegers )
    JSONTEST_ASSERT_EQUAL((Json::UInt64(1) << 32)-Json::UInt64(1), val.asLargestUInt());
 #endif
    JSONTEST_ASSERT_EQUAL(true, val.asBool());
-   JSONTEST_ASSERT_EQUAL("4294967295.50", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_EQUAL("4294967295.5", normalizeFloatingPointStr(val.asString()));
 
    val = Json::Value(1.2345678901234);
-   JSONTEST_ASSERT_STRING_EQUAL( "1.23456789012340", normalizeFloatingPointStr(val.asString()));
+   JSONTEST_ASSERT_STRING_EQUAL( "1.2345678901234", normalizeFloatingPointStr(val.asString()));
+
+   // A 16-digit floating point number.
+   val = Json::Value(2199023255552000.0f);
+   JSONTEST_ASSERT_EQUAL(float(2199023255552000), val.asFloat());
+   JSONTEST_ASSERT_STRING_EQUAL("2199023255552000", normalizeFloatingPointStr(val.asString()));
+
+   // A very large floating point number.
+   val = Json::Value(3.402823466385289e38);
+   JSONTEST_ASSERT_EQUAL(float(3.402823466385289e38), val.asFloat());
+   JSONTEST_ASSERT_STRING_EQUAL("3.402823466385289e+38", normalizeFloatingPointStr(val.asString()));
+
+   // An even larger floating point number.
+   val = Json::Value(1.2345678e300);
+   JSONTEST_ASSERT_EQUAL(double(1.2345678e300), val.asDouble());
+   JSONTEST_ASSERT_STRING_EQUAL("1.2345678e+300", normalizeFloatingPointStr(val.asString()));
 }
 
 
@@ -1399,6 +1460,23 @@ ValueTest::checkIsEqual( const Json::Value &x, const Json::Value &y )
     JSONTEST_ASSERT( y.compare( x ) == 0 );
 }
 
+
+struct WriterTest : JsonTest::TestCase
+{
+};
+
+
+JSONTEST_FIXTURE( WriterTest, dropNullPlaceholders )
+{
+    Json::FastWriter writer;
+    Json::Value nullValue;
+    JSONTEST_ASSERT( writer.write(nullValue) == "null\n" );
+
+    writer.dropNullPlaceholders();
+    JSONTEST_ASSERT( writer.write(nullValue) == "\n" );
+}
+
+
 int main( int argc, const char *argv[] )
 {
    JsonTest::Runner runner;
@@ -1420,5 +1498,6 @@ int main( int argc, const char *argv[] )
    JSONTEST_REGISTER_FIXTURE( runner, ValueTest, compareArray );
    JSONTEST_REGISTER_FIXTURE( runner, ValueTest, compareObject );
    JSONTEST_REGISTER_FIXTURE( runner, ValueTest, compareType );
+   JSONTEST_REGISTER_FIXTURE( runner, WriterTest, dropNullPlaceholders );
    return runner.runCommandLine( argc, argv );
 }

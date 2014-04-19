@@ -11,11 +11,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#if _MSC_VER >= 1400 // VC++ 8.0
+#if defined(_MSC_VER)  &&  _MSC_VER >= 1400 // VC++ 8.0
 #pragma warning( disable : 4996 )   // disable warning about strdup being deprecated.
 #endif
 
@@ -74,40 +73,19 @@ std::string valueToString( UInt value )
 
 std::string valueToString( double value )
 {
+   // Allocate a buffer that is more than large enough to store the 16 digits of
+   // precision requested below.
    char buffer[32];
+
+   // Print into the buffer. We need not request the alternative representation
+   // that always has a decimal point because JSON doesn't distingish the
+   // concepts of reals and integers.
 #if defined(_MSC_VER) && defined(__STDC_SECURE_LIB__) // Use secure version with visual studio 2005 to avoid warning. 
-   sprintf_s(buffer, sizeof(buffer), "%#.16g", value); 
-#else	
-   sprintf(buffer, "%#.16g", value); 
+   sprintf_s(buffer, sizeof(buffer), "%.16g", value); 
+#else
+   snprintf(buffer, sizeof(buffer), "%.16g", value);
 #endif
-   char* ch = buffer + strlen(buffer) - 1;
-   if (*ch != '0') return buffer; // nothing to truncate, so save time
-   while(ch > buffer && *ch == '0'){
-     --ch;
-   }
-   char* last_nonzero = ch;
-   while(ch >= buffer){
-     switch(*ch){
-     case '0':
-     case '1':
-     case '2':
-     case '3':
-     case '4':
-     case '5':
-     case '6':
-     case '7':
-     case '8':
-     case '9':
-       --ch;
-       continue;
-     case '.':
-       // Truncate zeroes to save bytes in output, but keep one.
-       *(last_nonzero+2) = '\0';
-       return buffer;
-     default:
-       return buffer;
-     }
-   }
+
    return buffer;
 }
 
@@ -193,7 +171,8 @@ Writer::~Writer()
 // //////////////////////////////////////////////////////////////////
 
 FastWriter::FastWriter()
-   : yamlCompatiblityEnabled_( false )
+   : yamlCompatiblityEnabled_( false ),
+     dropNullPlaceholders_( false )
 {
 }
 
@@ -202,6 +181,13 @@ void
 FastWriter::enableYAMLCompatibility()
 {
    yamlCompatiblityEnabled_ = true;
+}
+
+
+void
+FastWriter::dropNullPlaceholders()
+{
+   dropNullPlaceholders_ = true;
 }
 
 
@@ -221,7 +207,7 @@ FastWriter::writeValue( const Value &value )
    switch ( value.type() )
    {
    case nullValue:
-      document_ += "null";
+      if (!dropNullPlaceholders_) document_ += "null";
       break;
    case intValue:
       document_ += valueToString( value.asLargestInt() );
